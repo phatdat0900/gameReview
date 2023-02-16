@@ -5,8 +5,7 @@ const gameSchema = new mongoose.Schema(
   {
     title: {
       type: String,
-      required: true,
-      unique: true,
+      index: true,
     },
     plasform: {
       type: String,
@@ -17,21 +16,27 @@ const gameSchema = new mongoose.Schema(
     },
     genre: {
       type: String,
-      required: true,
-      select: false,
     },
     detail: {
       type: String,
     },
-    reviews: {
-      comment: {
-        type: String,
+    reviews: [
+      {
+        auth: {
+          type: String,
+        },
+        comment: {
+          type: String,
+        },
+        link: {
+          type: String,
+        },
       },
-    },
+    ],
   },
   modelOptions
 );
-
+gameSchema.index({ title: "text" });
 const gameModel = mongoose.model("Game", gameSchema);
 
 export default gameModel;

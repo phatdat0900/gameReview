@@ -5,6 +5,9 @@ import favoriteModel from "../models/favorite.model.js";
 import reviewModel from "../models/review.model.js";
 import tokenMiddlerware from "../middlewares/token.middleware.js";
 import gameModel from "../models/game.moldel.js";
+import Sentiment from "sentiment";
+
+var sentiment = new Sentiment();
 
 const getList = async (req, res) => {
   try {
@@ -36,13 +39,13 @@ const getGenres = async (req, res) => {
 
 const search = async (req, res) => {
   try {
-    const { mediaType } = req.params;
-    const { query, page } = req.query;
+    const title = req.query.query;
 
-    const response = await tmdbApi.mediaSearch({
-      query,
-      page,
-      mediaType: mediaType === "people" ? "person" : mediaType,
+    const query = { $text: { $search: title } };
+    const response = await gameModel.find(query, {
+      title: 1,
+      plasform: 1,
+      img: 1,
     });
 
     responseHandler.ok(res, response);
@@ -55,42 +58,32 @@ const getDetail = async (req, res) => {
   try {
     const { mediaType, mediaId } = req.params;
 
-    const params = { mediaType, mediaId };
+    const response = await gameModel.findById({ _id: mediaId });
 
-    const media = await tmdbApi.mediaDetail(params);
+    // result.push([i, response.reviews[i].comment]);
 
-    media.credits = await tmdbApi.mediaCredits(params);
+    // console.log(result);
+    const reviews = response.reviews.map((item) => {
+      let result = sentiment.analyze(item.comment);
+      return {
+        comment: item.comment,
+        auth: item.auth,
+        link: item.link,
+        score: result,
+      };
+    });
 
-    const videos = await tmdbApi.mediaVideos(params);
+    // console.log(score);
+    const data = {
+      title: response.title,
+      plasform: response.plasform,
+      img: response.img,
+      genre: response.genre,
+      detail: response.detail,
+      reviews,
+    };
 
-    media.videos = videos;
-
-    const recommend = await tmdbApi.mediaRecommend(params);
-
-    media.recommend = recommend.results;
-
-    media.images = await tmdbApi.mediaImages(params);
-
-    const tokenDecoded = tokenMiddlerware.tokenDecode(req);
-
-    if (tokenDecoded) {
-      const user = await userModel.findById(tokenDecoded.data);
-
-      if (user) {
-        const isFavorite = await favoriteModel.findOne({
-          user: user.id,
-          mediaId,
-        });
-        media.isFavorite = isFavorite !== null;
-      }
-    }
-
-    media.reviews = await reviewModel
-      .find({ mediaId })
-      .populate("user")
-      .sort("-createdAt");
-
-    responseHandler.ok(res, media);
+    responseHandler.ok(res, data);
   } catch (e) {
     console.log(e);
     responseHandler.error(res);
