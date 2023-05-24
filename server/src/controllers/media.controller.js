@@ -6,7 +6,8 @@ import reviewModel from "../models/review.model.js";
 import tokenMiddlerware from "../middlewares/token.middleware.js";
 import gameModel from "../models/game.moldel.js";
 import Sentiment from "sentiment";
-
+import { category } from "../category.js";
+const entries = Object.entries(category);
 var sentiment = new Sentiment();
 
 const getList = async (req, res) => {
@@ -56,7 +57,7 @@ const search = async (req, res) => {
 
 const getDetail = async (req, res) => {
   try {
-    const { mediaType, mediaId } = req.params;
+    const { mediaId } = req.params;
 
     const response = await gameModel.findById({ _id: mediaId });
 
@@ -89,5 +90,82 @@ const getDetail = async (req, res) => {
     responseHandler.error(res);
   }
 };
+const getEvaluateReviews = async (req, res) => {
+  try {
+    const data = {};
+    let reviewAnalys = [];
+    const { mediaId } = req.params;
+    const response = await gameModel.findById({ _id: mediaId });
 
-export default { getList, getGenres, search, getDetail };
+    const reviewSplit = response.reviews.map((item) => {
+      const sentences = item.comment.match(/[^.?!]+[.!?]+[\])'"`’”]*/g);
+
+      const analysSentences = sentences.map((e) => {
+        let result = sentiment.analyze(e);
+        if (result.calculation.length != 0) {
+          return { sentence: e, score: result.score };
+        }
+      });
+      return analysSentences;
+    });
+
+    for (let i = 0; i < reviewSplit.length; i++) {
+      reviewAnalys = reviewAnalys.concat(reviewSplit[i].filter(Boolean));
+    }
+
+    entries.forEach((e) => {
+      let score = 0;
+      reviewAnalys.forEach((review) => {
+        if (checkWordInSentences(review.sentence, e[1])) {
+          score = score + review.score;
+        }
+      });
+      data[e[0]] = score;
+    });
+    const review = generateReview(data);
+    responseHandler.ok(res, review);
+  } catch (e) {
+    console.log(e);
+    responseHandler.error(res);
+  }
+};
+
+function checkWordInSentences(string, words) {
+  let check = false;
+  // for (const word of words) {
+  //   console.log(word);
+  //   return string.includes(word);
+  // }
+  words.forEach((word) => {
+    if (string.includes(word)) {
+      check = true;
+    }
+  });
+  return check;
+}
+function generateReview(data) {
+  let review = "After analyzing the reviews of this game, this game have";
+  const keys = Object.keys(data);
+  const vals = Object.values(data);
+  if (vals.every((e) => e == 0)) {
+    review =
+      review +
+      " no specific assessment on each aspect or there are many controversial issues about this game";
+  } else {
+    keys.forEach((e) => {
+      if (data[e] > 20) {
+        review = review + " excellent " + e;
+      } else if (data[e] > 10) {
+        review = review + " great " + e;
+      } else if (data[e] > 0) {
+        review = review + " good " + e;
+      } else if (data[e] < 0) {
+        review = review + " not really good " + e;
+      }
+    });
+  }
+  console.log(review);
+  return review;
+}
+
+export default { getList, getGenres, search, getDetail, getEvaluateReviews };

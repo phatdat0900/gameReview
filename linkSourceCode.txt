@@ -1,0 +1,8 @@
+https://github.com/phatdat0900/gameReview
+
+chạy client: 
+cd client
+npm start
+chạy server:
+cd server
+npm start
