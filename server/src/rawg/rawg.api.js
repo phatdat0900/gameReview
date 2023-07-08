@@ -1,13 +1,12 @@
 import axiosClient from "../axios/axios.client.js";
-import tmdbEndpoints from "./tmdb.endpoints.js";
+import rawgEndpoints from "./rawg.endpoints.js";
 
-const tmdbApi = {
-  mediaList: async ({ mediaType, mediaCategory, page }) =>
-    await axiosClient.get(
-      tmdbEndpoints.mediaList({ mediaType, mediaCategory, page })
-    ),
-  mediaDetail: async ({ mediaType, mediaId }) =>
-    await axiosClient.get(tmdbEndpoints.mediaDetail({ mediaType, mediaId })),
+const rawgApi = {
+  gameList: async ({ page }) =>
+    await axiosClient.get(rawgEndpoints.gameList({ page })),
+  gameDetail: async (id) => await axiosClient.get(rawgEndpoints.gameDetail(id)),
+  gameScreenshots: async (id) =>
+    await axiosClient.get(rawgEndpoints.gameScreenshots(id)),
   mediaGenres: async ({ mediaType }) =>
     await axiosClient.get(tmdbEndpoints.mediaGenres({ mediaType })),
   mediaCredits: async ({ mediaType, mediaId }) =>
@@ -28,4 +27,4 @@ const tmdbApi = {
     await axiosClient.get(tmdbEndpoints.personMedias({ personId })),
 };
 
-export default tmdbApi;
+export default rawgApi;
