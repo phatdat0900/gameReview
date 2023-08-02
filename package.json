@@ -1,1 +1,9 @@
-{}
+{
+  "name": "mern-stack-game",
+  "version": "1.0.1",
+  "author": "tan dat",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server/index.js"
+  }
+}
