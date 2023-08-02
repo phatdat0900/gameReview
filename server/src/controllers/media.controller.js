@@ -4,6 +4,7 @@ import rawgApi from "../rawg/rawg.api.js";
 import userModel from "../models/user.model.js";
 import favoriteModel from "../models/favorite.model.js";
 import reviewModel from "../models/review.model.js";
+import overalReviewModel from "../models/overalReview.model.js";
 import tokenMiddlerware from "../middlewares/token.middleware.js";
 import gameModel from "../models/game.moldel.js";
 
@@ -29,13 +30,28 @@ const getList = async (req, res) => {
     });
 
     return responseHandler.ok(res, data);
+  } catch {
+    responseHandler.error(res);
+  }
+};
+const getListByContent = async (req, res) => {
+  try {
+    const { type } = req.params;
+    const response = await rawgApi.gameListByConent({
+      parent_platforms: type,
+      page: 2,
+    });
+    const data = [];
+    response.results.forEach((e) => {
+      data.push({
+        id: e.id,
+        title: e.name,
+        img: e.background_image,
+        platforms: e.parent_platforms,
+      });
+    });
 
-    // const response = await gameModel.find(
-    //   {},
-    //   { title: 1, plasform: 1, img: 1 }
-    // );
-
-    // return responseHandler.ok(res, response);
+    return responseHandler.ok(res, data);
   } catch {
     responseHandler.error(res);
   }
@@ -69,12 +85,41 @@ const search = async (req, res) => {
     responseHandler.error(res);
   }
 };
+const searchName = async (req, res) => {
+  try {
+    let plasform = {};
+    const { type } = req.params;
+    let title = slugify(req.query.query);
+    if (type === "platforms") {
+      const plasforms = await rawgApi.platforms();
+      plasform = plasforms.results.find((e) => e.slug === title);
+      if (plasform) {
+        title = plasform.id;
+      } else {
+        title = null;
+      }
+    }
+    console.log(title);
+    const response = await rawgApi.gameSearch({ [type]: title });
+    const data = [];
+    response.results.forEach((e) => {
+      data.push({
+        id: e.id,
+        title: e.name,
+        img: e.background_image,
+        platforms: e.parent_platforms,
+      });
+    });
+    responseHandler.ok(res, data);
+  } catch {
+    responseHandler.error(res);
+  }
+};
 const getReviewByID = async (req, res) => {
   try {
     const id = req.query;
-    console.log(id);
+
     const response = await reviewModel.find({ id: id.id });
-    console.log(response);
 
     responseHandler.ok(res, response);
   } catch {
@@ -119,9 +164,22 @@ const getDetail = async (req, res) => {
     // };
 
     const id = req.query;
-
+    let pos = [];
+    let neg = [];
     const response = await rawgApi.gameDetail(id.id);
     const reviews = await reviewModel.find({ id: id.id });
+    let overal_review = await overalReviewModel.findOne({ id: id.id });
+    if (!overal_review) {
+      // Set default values for overal_review
+      overal_review = {
+        overal: "There is no review about this game",
+        // You can add other properties with default values here
+      };
+    } else {
+      let result = sentiment.analyze(overal_review.overal);
+      pos = result.positive;
+      neg = result.negative;
+    }
     const screenshotAPIs = await rawgApi.gameScreenshots(id.id);
 
     const screenshots = screenshotAPIs.results.reduce(
@@ -132,24 +190,39 @@ const getDetail = async (req, res) => {
       (accum, obj) => [...accum, obj.name],
       []
     );
+    const publishers = await response.publishers.reduce(
+      (accum, obj) => [...accum, obj.name],
+      []
+    );
+    const developers = await response.developers.reduce(
+      (accum, obj) => [...accum, obj.name],
+      []
+    );
     const platforms = await response.platforms.reduce(
       (accum, obj) => [...accum, obj.platform.name],
       []
     );
+
     const data = {
       title: response.name,
       plasform: platforms,
       img: response.background_image,
       genres: genres,
+      released: response.released,
+      publishers: String(publishers),
+      developers: String(developers),
       detail: response.description,
       background_image: response.background_image_additional,
       screenshots: screenshots,
       reviews: reviews,
+      overal_review: {
+        overal: overal_review.overal,
+        pos: pos,
+        neg: neg,
+      },
     };
-    console.log(data);
     responseHandler.ok(res, data);
   } catch (e) {
-    console.log(e);
     responseHandler.error(res);
   }
 };
@@ -198,7 +271,6 @@ const getEvaluateReviews = async (req, res) => {
     });
 
     data.review = generateReview(data);
-    console.log(data);
     responseHandler.ok(res, data);
   } catch (e) {
     responseHandler.error(res);
@@ -237,7 +309,13 @@ function generateReview(data) {
   }
   return review;
 }
-
+const slugify = (str) =>
+  str
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 export default {
   getList,
   getGenres,
@@ -245,4 +323,6 @@ export default {
   getDetail,
   getEvaluateReviews,
   getReviewByID,
+  searchName,
+  getListByContent,
 };
