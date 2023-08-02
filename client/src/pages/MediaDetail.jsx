@@ -37,7 +37,7 @@ const ReadButton = styled.span`
 
 const MediaDetail = () => {
   const { mediaType, mediaId } = useParams();
-  const { overal, setOveral } = useState();
+
   const [media, setMedia] = useState();
   const [isFavorite, setIsFavorite] = useState(false);
   const [onRequest, setOnRequest] = useState(false);
@@ -65,7 +65,6 @@ const MediaDetail = () => {
         setMedia(response);
         setIsFavorite(response.isFavorite);
         setGenres(response.genres);
-        setOveral(response.overal_review.overal.split("/n"));
       }
 
       if (err) toast.error(err.message);
