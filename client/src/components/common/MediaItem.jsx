@@ -1,21 +1,14 @@
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import RemoveRedEyeIcon from "@mui/icons-material/RemoveRedEye";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-
 import uiConfigs from "../../configs/ui.configs";
 import { routesGen } from "../../routes/routes";
-import FavoriteIcon from "@mui/icons-material/Favorite";
-import CircularRate from "./CircularRate";
-import { useSelector } from "react-redux";
-import favoriteUtils from "../../utils/favorite.utils";
 import {
   FaWindows,
   FaLinux,
   FaXbox,
   FaPlaystation,
-  FaApple,
   FaAndroid,
 } from "react-icons/fa";
 import { RiAppleFill } from "react-icons/ri";
@@ -56,33 +49,21 @@ const platformsImage = [
   },
 ];
 const MediaItem = ({ media, mediaType }) => {
-  const { listFavorites } = useSelector((state) => state.user);
-
   const [title, setTitle] = useState("");
   const [platforms, setPlatforms] = useState([]);
-  const [posterPath, setPosterPath] = useState("");
-  const [releaseDate, setReleaseDate] = useState(null);
-  const [rate, setRate] = useState(null);
 
   useEffect(() => {
     setTitle(media.title || media.name || media.mediaTitle);
-
-    setRate(media.vote_average || media.mediaRate);
-    const images = platformsImage.filter((item) =>
-      media.platforms.some((e) => item.name === e.platform.slug)
-    );
-
-    setPlatforms(images);
+    if (media.platforms) {
+      const images = platformsImage.filter((item) => {
+        return media.platforms.some((e) => item.name === e.platform.slug);
+      });
+      setPlatforms(images);
+    }
   }, [media, mediaType]);
 
   return (
-    <Link
-      to={
-        mediaType !== "people"
-          ? routesGen.mediaDetail(mediaType, media.mediaId || media.id)
-          : routesGen.person(media.id)
-      }
-    >
+    <Link to={routesGen.mediaDetail("game", media.mediaId || media.id)}>
       <Box
         sx={{
           ...uiConfigs.style.backgroundImage(media.img),
@@ -95,17 +76,6 @@ const MediaItem = ({ media, mediaType }) => {
         {/* movie or tv item */}
         {mediaType !== "people" && (
           <>
-            {favoriteUtils.check({ listFavorites, mediaId: media.id }) && (
-              <FavoriteIcon
-                color="primary"
-                sx={{
-                  position: "absolute",
-                  top: 2,
-                  right: 2,
-                  fontSize: "2rem",
-                }}
-              />
-            )}
             <Box
               className="media-back-drop"
               sx={{
@@ -165,8 +135,9 @@ const MediaItem = ({ media, mediaType }) => {
                 <Stack
                   direction="row"
                   justifyContent="flex-start"
-                  alignItems="baseline"
-                  spacing={2}
+                  flexWrap="wrap"
+                  alignContent="flex-start"
+                  gap="20px"
                 >
                   {platforms.map((e) => {
                     return e.img;

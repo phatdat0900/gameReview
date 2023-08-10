@@ -8,7 +8,8 @@ const mediaEndpoints = {
   detail: ({ mediaId }) => `games/detail?id=${mediaId}`,
   analysis: ({ mediaType, mediaId }) =>
     `${mediaType}/detailEvaluate/${mediaId}`,
-  search: ({ type, query }) => `games/search/${type}?query=${query}`,
+  search: ({ type, query, page }) =>
+    `games/search?query=${query}&type=${type}&page=${page}`,
 };
 
 const mediaApi = {
@@ -54,10 +55,10 @@ const mediaApi = {
       return { err };
     }
   },
-  search: async ({ type, query }) => {
+  search: async ({ type, query, page }) => {
     try {
       const response = await publicClient.get(
-        mediaEndpoints.search({ type, query })
+        mediaEndpoints.search({ type, query, page })
       );
 
       return { response };

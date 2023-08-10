@@ -1,5 +1,4 @@
-import { LoadingButton } from "@mui/lab";
-import { Box, Button, Divider, Stack, Typography } from "@mui/material";
+import { Box, Divider, Stack, Typography } from "@mui/material";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
@@ -10,25 +9,9 @@ import reviewApi from "../api/modules/review.api";
 import Container from "../components/common/Container";
 import uiConfigs from "../configs/ui.configs";
 import { setGlobalLoading } from "../redux/features/globalLoadingSlice";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { routesGen } from "../routes/routes";
 
-const ReviewItem = ({ review, onRemoved }) => {
-  const [onRequest, setOnRequest] = useState(false);
-
-  const onRemove = async () => {
-    if (onRequest) return;
-    setOnRequest(true);
-    const { response, err } = await reviewApi.remove({ reviewId: review.id });
-    setOnRequest(false);
-
-    if (err) toast.error(err.message);
-    if (response) {
-      toast.success("Remove review success");
-      onRemoved(review.id);
-    }
-  };
-
+const ReviewItem = ({ review }) => {
   return (
     <Box
       sx={{
@@ -36,7 +19,7 @@ const ReviewItem = ({ review, onRemoved }) => {
         display: "flex",
         flexDirection: { xs: "column", md: "row" },
         padding: 1,
-        opacity: onRequest ? 0.6 : 1,
+        opacity: 1,
         "&:hover": { backgroundColor: "background.paper" },
       }}
     >
@@ -78,7 +61,7 @@ const ReviewItem = ({ review, onRemoved }) => {
         </Stack>
       </Box>
 
-      <LoadingButton
+      {/* <LoadingButton
         variant="contained"
         sx={{
           position: { xs: "relative", md: "absolute" },
@@ -92,15 +75,14 @@ const ReviewItem = ({ review, onRemoved }) => {
         onClick={onRemove}
       >
         remove
-      </LoadingButton>
+      </LoadingButton> */}
     </Box>
   );
 };
 
 const ReviewList = () => {
-  const [reviews, setReviews] = useState([]);
   const [filteredReviews, setFilteredReviews] = useState([]);
-  const [page, setPage] = useState(1);
+
   const [count, setCount] = useState(0);
 
   const dispatch = useDispatch();
@@ -116,30 +98,13 @@ const ReviewList = () => {
       if (err) toast.error(err.message);
       if (response) {
         setCount(response.length);
-        setReviews([...response]);
+
         setFilteredReviews([...response].splice(0, skip));
       }
     };
 
     getReviews();
-  }, []);
-
-  const onLoadMore = () => {
-    setFilteredReviews([
-      ...filteredReviews,
-      ...[...reviews].splice(page * skip, skip),
-    ]);
-    setPage(page + 1);
-  };
-
-  const onRemoved = (id) => {
-    console.log({ reviews });
-    const newReviews = [...reviews].filter((e) => e.id !== id);
-    console.log({ newReviews });
-    setReviews(newReviews);
-    setFilteredReviews([...newReviews].splice(0, page * skip));
-    setCount(count - 1);
-  };
+  }, [dispatch]);
 
   return (
     <Box sx={{ ...uiConfigs.style.mainContent }}>
@@ -147,7 +112,7 @@ const ReviewList = () => {
         <Stack spacing={2}>
           {filteredReviews.map((item) => (
             <Box key={item.id}>
-              <ReviewItem review={item} onRemoved={onRemoved} />
+              <ReviewItem review={item} />
               <Divider
                 sx={{
                   display: { xs: "block", md: "none" },
@@ -155,9 +120,6 @@ const ReviewList = () => {
               />
             </Box>
           ))}
-          {filteredReviews.length < reviews.length && (
-            <Button onClick={onLoadMore}>load more</Button>
-          )}
         </Stack>
       </Container>
     </Box>

@@ -3,30 +3,8 @@ import { Outlet } from "react-router-dom";
 import Footer from "../common/Footer";
 import GlobalLoading from "../common/GlobalLoading";
 import Topbar from "../common/Topbar";
-import AuthModal from "../common/AuthModal";
-import { useDispatch, useSelector } from "react-redux";
-import { useEffect } from "react";
-import { toast } from "react-toastify";
-import userApi from "../../api/modules/user.api";
-
-import { setUser } from "../../redux/features/userSlice";
 
 const MainLayout = () => {
-  const dispatch = useDispatch();
-
-  const { user } = useSelector((state) => state.user);
-
-  useEffect(() => {
-    const authUser = async () => {
-      const { response, err } = await userApi.getInfo();
-
-      if (response) dispatch(setUser(response));
-      if (err) dispatch(setUser(null));
-    };
-
-    authUser();
-  }, [dispatch]);
-
   return (
     <>
       {/* global loading */}
@@ -34,7 +12,7 @@ const MainLayout = () => {
       {/* global loading */}
 
       {/* login modal */}
-      <AuthModal />
+
       {/* login modal */}
 
       <Box display="flex" minHeight="100vh">
