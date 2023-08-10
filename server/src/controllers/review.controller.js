@@ -1,72 +1,34 @@
 import responseHandler from "../handlers/response.handler.js";
 import reviewModel from "../models/review.model.js";
+import overalReviewModel from "../models/overalReview.model.js";
 
-const create = async (req, res) => {
+const getReviewByID = async (req, res) => {
   try {
-    const { movieId } = req.params;
+    const id = req.query;
 
-    const review = new reviewModel({
-      user: req.user.id,
-      movieId,
-      ...req.body,
-    });
+    const response = await reviewModel.find({ id: id.id });
 
-    await review.save();
-
-    responseHandler.created(res, {
-      ...review._doc,
-      id: review.id,
-      user: req.user,
-    });
+    responseHandler.ok(res, response);
   } catch {
     responseHandler.error(res);
   }
 };
-
-const remove = async (req, res) => {
+const getOveralReviewByID = async (req, res) => {
   try {
-    const { reviewId } = req.params;
+    const id = req.query;
 
-    const review = await reviewModel.findOne({
-      _id: reviewId,
-      user: req.user.id,
-    });
+    let overal_review = await overalReviewModel.findOne({ id: id.id });
+    if (!overal_review) {
+      overal_review = {
+        overal: "There is no review about this game",
+        con_words: [],
+        pos_words: [],
+      };
+    }
 
-    if (!review) return responseHandler.notfound(res);
-
-    await review.remove();
-
-    responseHandler.ok(res);
+    responseHandler.ok(res, overal_review);
   } catch {
     responseHandler.error(res);
   }
 };
-
-const getReviewsOfUser = async (req, res) => {
-  try {
-    const reviews = await reviewModel
-      .find({
-        user: req.user.id,
-      })
-      .sort("-createdAt");
-
-    responseHandler.ok(res, reviews);
-  } catch {
-    responseHandler.error(res);
-  }
-};
-const getReviewsById = async (req, res) => {
-  try {
-    const reviews = await reviewModel
-      .find({
-        user: req.user.id,
-      })
-      .sort("-createdAt");
-
-    responseHandler.ok(res, reviews);
-  } catch {
-    responseHandler.error(res);
-  }
-};
-
-export default { create, remove, getReviewsOfUser };
+export default { getReviewByID, getOveralReviewByID };
