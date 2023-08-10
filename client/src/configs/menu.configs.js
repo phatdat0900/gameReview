@@ -10,40 +10,17 @@ import LockResetOutlinedIcon from "@mui/icons-material/LockResetOutlined";
 const main = [
   {
     display: "games",
-    path: "/games",
+    path: "/",
     icon: <SportsEsportsIcon />,
-    state: "movie",
   },
 
   {
     display: "search",
     path: "/search",
     icon: <SearchOutlinedIcon />,
-    state: "search",
   },
 ];
 
-const user = [
-  {
-    display: "favorites",
-    path: "/favorites",
-    icon: <FavoriteBorderOutlinedIcon />,
-    state: "favorite",
-  },
-  {
-    display: "reviews",
-    path: "/reviews",
-    icon: <RateReviewOutlinedIcon />,
-    state: "reviews",
-  },
-  {
-    display: "password update",
-    path: "/password-update",
-    icon: <LockResetOutlinedIcon />,
-    state: "password.update",
-  },
-];
-
-const menuConfigs = { main, user };
+const menuConfigs = { main };
 
 export default menuConfigs;

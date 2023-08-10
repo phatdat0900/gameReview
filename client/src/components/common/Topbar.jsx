@@ -15,10 +15,8 @@ import { cloneElement, useState } from "react";
 import { Link } from "react-router-dom";
 import menuConfigs from "../../configs/menu.configs";
 import { themeModes } from "../../configs/theme.configs";
-import { setAuthModalOpen } from "../../redux/features/authModalSlice";
 import { setThemeMode } from "../../redux/features/themeModeSlice";
 import Logo from "./Logo";
-import UserMenu from "./UserMenu";
 import Sidebar from "./Sidebar";
 
 const ScrollAppBar = ({ children, window }) => {
@@ -46,7 +44,6 @@ const ScrollAppBar = ({ children, window }) => {
   });
 };
 const Topbar = () => {
-  const { user } = useSelector((state) => state.user);
   const { appState } = useSelector((state) => state.appState);
   const { themeMode } = useSelector((state) => state.themeMode);
 
@@ -118,7 +115,6 @@ const Topbar = () => {
 
             {/* user menu */}
 
-            {user && <UserMenu />}
             {/* user menu */}
           </Toolbar>
         </AppBar>

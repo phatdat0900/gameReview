@@ -1,4 +1,3 @@
-import { LoadingButton } from "@mui/lab";
 import {
   Box,
   Stack,
@@ -7,64 +6,63 @@ import {
   MenuItem,
   FormControl,
 } from "@mui/material";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
 import mediaApi from "../api/modules/media.api";
 import MediaGrid from "../components/common/MediaGrid";
 import uiConfigs from "../configs/ui.configs";
 import Select from "@mui/material/Select";
-const mediaTypes = ["movie", "tv", "people"];
-let timer;
-const timeout = 500;
+import Pagination from "@mui/material/Pagination";
+import { useSearchParams } from "react-router-dom";
 
 const MediaSearch = () => {
-  const [query, setQuery] = useState("");
-  const [type, setType] = useState("Name");
-  const [onSearch, setOnSearch] = useState(false);
-  const [mediaType, setMediaType] = useState(mediaTypes[0]);
-  const [medias, setMedias] = useState([]);
-  const [page, setPage] = useState(1);
-  const [listShow, setListShow] = useState([]);
-
-  const handleChange = (event) => {
-    setType(event.target.value);
+  const [data, setData] = useState();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filter = useMemo(() => {
+    return {
+      page: searchParams.get("page") ? searchParams.get("page") : 1,
+      type: searchParams.get("type") ? searchParams.get("type") : "name",
+      query: searchParams.get("query") ? searchParams.get("query") : "",
+    };
+  }, [searchParams]);
+  const handleChangeType = (event) => {
+    searchParams.set("type", event.target.value);
+    searchParams.delete("page");
+    setSearchParams(searchParams);
   };
 
-  const search = useCallback(async () => {
-    setOnSearch(true);
-    const { response, err } = await mediaApi.search({ type, query });
-
-    setOnSearch(false);
-
-    if (err) toast.error(err.message);
-    if (response) {
-      setListShow(response.slice(0, 8));
-      setMedias(response);
-      // if (page > 1) setMedias((m) => [...m, ...response.results]);
-      // else setMedias([...response.results]);
-    }
-  }, [mediaType, query, type, page]);
-
   useEffect(() => {
-    if (query.trim().length === 0) {
-      setMedias([]);
-      setPage(1);
-    } else search();
-  }, [search, query, type, page]);
+    const search = async (param) => {
+      try {
+        const { response } = await mediaApi.search(param);
+        setData(response);
+      } catch (err) {
+        toast.error(err.message);
+        setData(null);
+      }
+    };
+    search(filter);
+  }, [filter]);
 
-  useEffect(() => {
-    setListShow(medias.slice(0, page * 8));
-  }, [page, listShow]);
+  const media = useMemo(() => {
+    return {
+      list: data ? data.data : [],
+      count: data ? data.count : 0,
+    };
+  }, [data]);
 
   const onQueryChange = (e) => {
-    const newQuery = e.target.value;
-    clearTimeout(timer);
-
-    timer = setTimeout(() => {
-      setQuery(newQuery);
-    }, timeout);
+    if (e.target.value) searchParams.set("query", e.target.value);
+    else searchParams.delete("query");
+    searchParams.delete("page");
+    setSearchParams(searchParams);
   };
-
+  const handleChangePage = (event, value) => {
+    if (value !== 1) {
+      searchParams.set("page", value);
+    } else searchParams.delete("page");
+    setSearchParams(searchParams);
+  };
   return (
     <>
       <Toolbar />
@@ -86,12 +84,12 @@ const MediaSearch = () => {
           >
             <FormControl sx={{ m: 1, minWidth: 120 }}>
               <Select
-                value={type}
-                onChange={handleChange}
+                value={filter.type}
+                onChange={handleChangeType}
                 displayEmpty
                 inputProps={{ "aria-label": "Without label" }}
               >
-                <MenuItem value={"search"}>Name</MenuItem>
+                <MenuItem value={"name"}>Name</MenuItem>
                 <MenuItem value={"developers"}>Developers</MenuItem>
                 <MenuItem value={"platforms"}>Platforms</MenuItem>
                 <MenuItem value={"publishers"}>Publishers</MenuItem>
@@ -107,12 +105,24 @@ const MediaSearch = () => {
             />
           </Box>
 
-          <MediaGrid medias={listShow} mediaType={mediaType} />
+          <MediaGrid medias={media.list} mediaType={"game"} />
 
-          {listShow.length < medias.length && (
-            <LoadingButton loading={onSearch} onClick={() => setPage(page + 1)}>
-              load more
-            </LoadingButton>
+          {media.count > 20 && (
+            <Stack
+              spacing={2}
+              sx={{
+                display: "flex",
+                flexWrap: "nowrap",
+                alignItems: "center",
+              }}
+            >
+              <Pagination
+                count={media.count > 10000 ? 500 : Math.ceil(media.count / 20)}
+                shape="rounded"
+                page={Number(filter.page)}
+                onChange={handleChangePage}
+              />
+            </Stack>
           )}
         </Stack>
       </Box>
