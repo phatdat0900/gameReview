@@ -220,14 +220,16 @@ const getDetail = async (req, res) => {
     const response = await rawgApi.gameDetail(id.id);
     const reviews = await reviewModel.find({ id: id.id });
     let overal_review = await overalReviewModel.findOne({ id: id.id });
-    if (!overal_review) {
-      overal_review = {
-        overal: "There is no review about this game",
-        con_words: [],
-        pos_words: [],
+    let newOveral = { ...overal_review };
+    if (overal_review == null) {
+      newOveral = {
+        _doc: {
+          overal: "There is no review about this game",
+          con_words: [],
+          pos_words: [],
+        },
       };
     }
-    const newOveral = { ...overal_review };
 
     const screenshotAPIs = await rawgApi.gameScreenshots(id.id);
 
@@ -265,12 +267,12 @@ const getDetail = async (req, res) => {
       screenshots: screenshots,
       reviews: reviews,
       overal_review: {
-        overal: overal_review.overal,
+        overal: newOveral["_doc"].overal,
         pos: newOveral["_doc"].pos_words,
         neg: newOveral["_doc"].con_words,
       },
     };
-
+    console.log(data);
     responseHandler.ok(res, data);
   } catch (e) {
     responseHandler.error(res);
